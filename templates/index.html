@@ -14,6 +14,7 @@
         <div class="game-description my-4">
             <p>Become the world's best salesman, by showing that you can sell anything to anyone! In this instance, you are tasked with selling a <strong class="highlight">lifetime supply of sunscreen</strong> to <strong class="highlight">Vlad, a vampire</strong>.</p>
             <p>When the <strong class="highlight">bar below reaches 100</strong>, you have convinced the buyer and sold them your product. 
+               The AI gives <strong class="highlight">bonus points for creativity</strong>, so try to be as creative in your sales pitch as possible!
                 <!-- Try to sell it in as little time and for as high a cost for <strong class="highlight">bonus points</strong>! -->
             </p>
             <table class="table-fixed w-full max-w-md mb-4">
@@ -121,7 +122,8 @@
                 } else if (data.is_success) {
                     turns_taken = data.turns_taken;
                     hints_used = data.hints_used;
-                    openModal("Success!", `You have successfully sold the product in ${turns_taken} turns and used ${hints_used} hints.`);
+                    sell_price = data.sell_price;
+                    openModal("Success!", `You have successfully sold the product in ${turns_taken} turns and used ${hints_used} hints. You sold for $${sell_price}!`);
                 } else if (data.is_failure || data.score < 0) {
                     turns_taken = data.turns_taken;
                     hints_used = data.hints_used;

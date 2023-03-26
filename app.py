@@ -91,6 +91,30 @@ def get_completion(model, messages, temperature):
         temperature=temperature,
     )
 
+def get_selling_price():
+    prompt = "Chat history: \n"
+    for message in session['conversation_history']:
+        if message['role'] == 'system':
+            continue
+        if message['role'] == 'user':
+            prompt += "Seller: "
+        elif message['role'] == 'assistant':
+            prompt += "Buyer: "
+        prompt +=  message['content'] + "\n"
+    prompt += "Question: How much did the buyer pay for the product?\n"
+    prompt += "Answer: $"
+    response = openai.Completion.create(
+        model="text-davinci-003",
+        prompt=prompt,
+        max_tokens=20,
+        temperature=0.1,
+        stop=["\n"],
+    )
+    
+    resp = response.choices[0].text
+    # convert to int and return
+    return int(resp)
+
 @app.route("/chat", methods=["POST"])
 def chat():
     global model_chat
@@ -163,11 +187,13 @@ def chat():
 
     if "[Success]" in assistant_response:
         assistant_response = assistant_response.replace('[Success]', '')
+        sell_price = get_selling_price()
         return jsonify({"response": assistant_response, 
                         "score": 100, 
                         "turns_taken": len(session['conversation_history']) // 2,
                         "hints_used": session['hints_used'],
                         "is_success": True,
+                        "sell_price": sell_price,
                         })
     elif "[Leave]" in assistant_response:
         assistant_response = assistant_response.replace('[Leave]', '')
