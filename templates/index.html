@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World's Best Salesman</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container mx-auto px-4 py-5">
+        <h1 class="text-2xl font-bold mb-5">World's Best Salesman!</h1>
+        <div class="game-description my-4">
+            <p>Become the world's best salesman, by showing that you can sell anything to anyone! In this instance, you are tasked with selling a <strong class="highlight">lifetime supply of sunscreen</strong> to <strong class="highlight">Vlad, a vampire</strong>.</p>
+            <p>When the <strong class="highlight">bar below reaches 100</strong>, you have convinced the buyer and sold them your product. Try to sell it in as little time and for as high a cost for <strong class="highlight">bonus points</strong>!</p>
+            <table class="table-fixed w-full max-w-md mb-4">
+                <thead>
+                    <tr>
+                        <th class="w-1/2 text-left center">Buyer</th>
+                        <th class="w-1/2 text-left">Product</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="flex items-center">
+                                <img src="{{ url_for('static', filename='images/vlad.jpg') }}" alt="Vlad" class="w-16 h-16 rounded mr-4">
+                                <div>
+                                    <strong class="text-indigo-600 font-bold">Vlad, a 45 year old Vampire</strong>
+                                    <p>from Transylvania</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center">
+                                <img src="{{ url_for('static', filename='images/moonbalm.jpg') }}" alt="MoonBalm" class="w-16 h-16 rounded mr-4">
+                                <div>
+                                    <strong class="text-indigo-600 font-bold">MoonBalm, a sunscreen for vampires</strong>
+                                    <p>Market price: $100</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="convincing-bar-container w-full max-w-md mb-4 relative">
+            <div class="convincing-bar bg-red-500 h-4" style="width: 0%;"></div>
+            <span class="score-text absolute top-0 left-0 w-full h-full flex justify-center items-center text-sm"></span>
+          </div>
+        <div class="chat-window bg-white p-4 border border-gray-200 rounded w-full max-w-md">
+            <!-- Messages will be appended here -->
+        </div>
+        <form class="mt-4" id="chat-form">
+            <input type="text" name="user_input" class="w-full border border-gray-200 rounded px-3 py-2" placeholder="Type your message here..." autocomplete="off">
+            <button type="submit" class="bg-blue-500 text-white rounded px-4 py-2 mt-2">Send</button>
+            <button type="button" id="hint-btn" class="bg-green-500 text-white rounded px-4 py-2 mt-2">Hint</button>
+            <button type="button" id="reset-btn" class="bg-red-500 text-white rounded px-4 py-2 mt-2">Reset</button>
+        </form>
+        <div class="sales-tips my-4">
+            <h2 class="text-2xl font-semibold mb-4">Tips</h2>
+            <ul class="list-none space-y-2">
+                <li class="text-sm"><strong class="text-indigo-600 font-bold">Highlight unique features</strong>: Emphasize product's distinctive aspects and benefits for the buyer.</li>
+                <li class="text-sm"><strong class="text-indigo-600 font-bold">Build rapport</strong>: Connect with the buyer through small talk and genuine interest in their needs.</li>
+                <li class="text-sm"><strong class="text-indigo-600 font-bold">Understand buyer's needs</strong>: Use open-ended questions to tailor your pitch to their specific requirements.</li>
+                <li class="text-sm"><strong class="text-indigo-600 font-bold">Use storytelling</strong>: Share relatable stories to help the buyer visualize the product's benefits.</li>
+                <li class="text-sm"><strong class="text-indigo-600 font-bold">Address objections</strong>: Listen, empathize, and provide clear information to counter doubts and concerns.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function appendMessage(text, sender) {
+            let messageClass = sender === "user" ? "text-right" : "text-left";
+            let messageHTML = `<p class="${messageClass}">${text}</p>`;
+            $(".chat-window").append(messageHTML);
+        }
+
+        $("#chat-form").on("submit", function (event) {
+            event.preventDefault();
+            let user_input = $("input[name='user_input']").val();
+            appendMessage(user_input, "user");
+            $("input[name='user_input']").val("");
+
+            $.post("/chat", { user_input }, function (data) {
+                appendMessage(data.response, "ai");
+                console.log(data)
+                updateConvincingBar(data.score);
+            });
+        });
+
+        $("#reset-btn").on("click", function () {
+            // Clear the chat window
+            $(".chat-window").empty();
+
+            // Send a request to the server to clear the session history
+            $.post("/reset", function () {
+                console.log("Session history cleared.");
+            });
+        });
+
+        function updateConvincingBar(score) {
+            // Update the bar width
+            $(".convincing-bar").css("width", `${score}%`);
+
+            // Calculate the color based on the score
+            const red = Math.round(255 * (1 - score / 100));
+            const green = Math.round(255 * (score / 100));
+            const bgColor = `rgb(${red}, ${green}, 0)`;
+
+            // Update the bar color
+            $(".convincing-bar").css("background-color", bgColor);
+
+            // Update the score text
+            $(".score-text").text(`${score}/100`);
+        }
+
+        $("#hint-btn").on("click", function () {
+            $.post("/hint", function (data) {
+                console.log(data);
+                response = data.response;
+                //set user_input to the hint
+                $("input[name='user_input']").val(response);
+            });
+        });
+
+    </script>
+</body>
+</html>
