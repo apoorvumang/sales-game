@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, session
 import openai
-from multiprocessing.pool import ThreadPool
+import concurrent
 import re
 
 app = Flask(__name__)
@@ -99,7 +99,7 @@ def chat():
     Rules:
     - You have an internal 'convincing meter' that goes from 0-100 that represents how willing you are to buy the user's product. Output this number in square brackets [x] at the end of each message.
     - When the salesman response is short, uninteresting or outlandish, you reduce the score. 
-    - If the salesman response is interesting and makes you want to buy the product, increase score. If it is very creative as well, increase score even more.
+    - If the salesman response is interesting and makes you want to buy the product, increase score. If it is very creative as well, increase the score even more, by atleast 30 points.
     - If creativity is detected, add the phrase [[creative]] at the beginning of your response.
     - Once the score reaches 100, you should agree to buy the product and end the conversation. You should put [Success] at the end of your message instead of score [x].
     - If at any point of time score goes below 0, you say that you are leaving, and you put [Leave] at the end of your message instead of score [x].
@@ -119,8 +119,7 @@ def chat():
     # Append the user's message to the conversation history
     session['conversation_history'].append({"role": "user", "content": user_input})
 
-    # create a threadpool of 2
-    Pool = ThreadPool(2)
+    
 
     sidechannel_messages=[
         {"role": "system", "content": sidechannel_prompt},
@@ -133,7 +132,11 @@ def chat():
     ]
 
     # call both the APIs in parallel
-    responses = Pool.starmap(get_completion, chat_api_params)
+    # use concurrent.futures to call the APIs in parallel
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        responses = executor.map(lambda params: get_completion(*params), chat_api_params)
+    
+    responses = list(responses)
 
     # Extract the assistant's response and append it to the conversation history
     assistant_response = responses[0].choices[0].message["content"]
