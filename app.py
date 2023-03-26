@@ -162,6 +162,7 @@ def chat():
         score = 0
 
     if "[Success]" in assistant_response:
+        assistant_response = assistant_response.replace('[Success]', '')
         return jsonify({"response": assistant_response, 
                         "score": 100, 
                         "turns_taken": len(session['conversation_history']) // 2,
@@ -169,6 +170,7 @@ def chat():
                         "is_success": True,
                         })
     elif "[Leave]" in assistant_response:
+        assistant_response = assistant_response.replace('[Leave]', '')
         return jsonify({"response": assistant_response, 
                         "score": 0, 
                         "turns_taken": len(session['conversation_history']) // 2,
