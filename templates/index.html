@@ -13,7 +13,9 @@
         <h1 class="text-2xl font-bold mb-5">World's Best Salesman!</h1>
         <div class="game-description my-4">
             <p>Become the world's best salesman, by showing that you can sell anything to anyone! In this instance, you are tasked with selling a <strong class="highlight">lifetime supply of sunscreen</strong> to <strong class="highlight">Vlad, a vampire</strong>.</p>
-            <p>When the <strong class="highlight">bar below reaches 100</strong>, you have convinced the buyer and sold them your product. Try to sell it in as little time and for as high a cost for <strong class="highlight">bonus points</strong>!</p>
+            <p>When the <strong class="highlight">bar below reaches 100</strong>, you have convinced the buyer and sold them your product. 
+                <!-- Try to sell it in as little time and for as high a cost for <strong class="highlight">bonus points</strong>! -->
+            </p>
             <table class="table-fixed w-full max-w-md mb-4">
                 <thead>
                     <tr>
@@ -49,7 +51,7 @@
             <div class="convincing-bar bg-red-500 h-4" style="width: 0%;"></div>
             <span class="score-text absolute top-0 left-0 w-full h-full flex justify-center items-center text-sm"></span>
           </div>
-        <div class="chat-window bg-white p-4 border border-gray-200 rounded w-full max-w-md">
+        <div class="chat-window p-4 border border-gray-200 rounded w-full max-w-md">
             <!-- Messages will be appended here -->
         </div>
         <form class="mt-4" id="chat-form">
@@ -70,34 +72,78 @@
         </div>
     </div>
 
+    <div id="myModal" class="modal hidden fixed inset-0 flex items-center justify-center p-4 bg-black bg-opacity-50">
+        <div class="modal-content bg-white rounded p-6 w-full max-w-md">
+          <h2 id="modal_title" class="text-xl font-bold mb-4">Modal Title</h2>
+          <p id="modal_text">Modal text</p>
+          <button id="closeModal" class="bg-blue-500 text-white rounded px-4 py-2 mt-4">Close</button>
+        </div>
+      </div>
+
     <script>
         function appendMessage(text, sender) {
-            let messageClass = sender === "user" ? "text-right" : "text-left";
+            let messageClass = sender === "user" ? "message user" : "message ai";
             let messageHTML = `<p class="${messageClass}">${text}</p>`;
             $(".chat-window").append(messageHTML);
         }
 
+        function openModal(title, text) {
+            $("#modal_title").text(title);
+            $("#modal_text").text(text);
+            $("#myModal").removeClass("hidden");
+        }
+
+        function closeModal() {
+            $("#myModal").addClass("hidden");
+        }
+
+        $("#closeModal").on("click", closeModal);
+
         $("#chat-form").on("submit", function (event) {
             event.preventDefault();
             let user_input = $("input[name='user_input']").val();
+            // if user input is empty don't send it to the server
+            if (user_input === "") {
+                console.log("Empty input");
+                return;
+            }
             appendMessage(user_input, "user");
+            $("input[name='user_input']").prop("disabled", true);
             $("input[name='user_input']").val("");
 
             $.post("/chat", { user_input }, function (data) {
                 appendMessage(data.response, "ai");
                 console.log(data)
                 updateConvincingBar(data.score);
+                if (data.is_sidechannel_attack) {
+                    openModal("Side-channel attack detected!", "You are trying to use a side-channel attack! This is not allowed. Your score has been reset to 0.");
+                    reset_everything();
+                } else if (data.is_success) {
+                    turns_taken = data.turns_taken;
+                    hints_used = data.hints_used;
+                    openModal("Success!", `You have successfully sold the product in ${turns_taken} turns and used ${hints_used} hints.`);
+                } else if (data.is_failure || data.score < 0) {
+                    turns_taken = data.turns_taken;
+                    hints_used = data.hints_used;
+                    openModal("Failure!", `You have failed to sell the product in ${turns_taken} turns and used ${hints_used} hints. Try again!`);
+                }
+                $("input[name='user_input']").prop("disabled", false);
             });
         });
 
-        $("#reset-btn").on("click", function () {
+        function reset_everything() {
             // Clear the chat window
             $(".chat-window").empty();
+            updateConvincingBar(0);
 
             // Send a request to the server to clear the session history
             $.post("/reset", function () {
                 console.log("Session history cleared.");
             });
+        }
+
+        $("#reset-btn").on("click", function () {
+            reset_everything();
         });
 
         function updateConvincingBar(score) {
@@ -117,11 +163,15 @@
         }
 
         $("#hint-btn").on("click", function () {
+            // disable the input
+            $("input[name='user_input']").prop("disabled", true);
             $.post("/hint", function (data) {
                 console.log(data);
                 response = data.response;
                 //set user_input to the hint
                 $("input[name='user_input']").val(response);
+                //enable the input
+                $("input[name='user_input']").prop("disabled", false);
             });
         });
 

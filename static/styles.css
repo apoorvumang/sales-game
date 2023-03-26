@@ -8,8 +8,27 @@ body {
     overflow-y: auto;
   }
   
-  .chat-window p {
+  /* .chat-window p {
     margin-bottom: 1rem;
+  } */
+
+  .chat-window .message {
+    max-width: 75%;
+    margin-bottom: 1rem;
+    padding: 8px 12px;
+    border-radius: 16px;
+  }
+  
+  .chat-window .message.user {
+    background-color: #d6f9dc; /* pastel green */
+    margin-left: auto;
+    border-bottom-right-radius: 0;
+  }
+  
+  .chat-window .message.ai {
+    background-color: #e8d6f9; /* pastel purple */
+    margin-right: auto;
+    border-bottom-left-radius: 0;
   }
 
   @media (max-width: 640px) {
@@ -21,6 +40,11 @@ body {
   }
 
   .highlight {
-    color: red;
+    color: maroon;
     font-weight: bold;
   }
+
+  .modal {
+    z-index: 9999;
+  }
+  
