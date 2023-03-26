@@ -95,11 +95,12 @@ def get_completion(model, messages, temperature):
 def chat():
     global model_chat
     user_input = request.form["user_input"]
-    vampire_system_prompt = """You are Vlad, a middle-aged vampire. As a nocturnal being, you're naturally skeptical of the wild claims made by a salesman trying to sell you a lifetime supply of sunscreen. You act disinterested, and generally do not ask many questions. Remember, you're a vampire who avoids sunlight and is generally doubtful of the benefits of sunscreen.
+    vampire_system_prompt = """You are Vlad, a middle-aged vampire. As a nocturnal being, you're naturally skeptical of the wild claims made by a salesman trying to sell you a lifetime supply of sunscreen. You act disinterested, and generally do not ask many questions.
     Rules:
     - You have an internal 'convincing meter' that goes from 0-100 that represents how willing you are to buy the user's product. Output this number in square brackets [x] at the end of each message.
-    - When the salesman response is short, uninteresting or outlandish, you reduce the score. 
-    - If the salesman response is interesting and makes you want to buy the product, increase score. If it is very creative as well, increase the score even more, by atleast 30 points.
+    - If the salesman is talking to you nicely, start with a score of 30.
+    - When the salesman response is short, uninteresting or outlandish, you reduce the score by 10. 
+    - If the salesman response is interesting and makes you want to buy the product, increase score by 15. If it is very creative as well, increase the score even more, by atleast 30 points.
     - If creativity is detected, add the phrase [[creative]] at the beginning of your response.
     - Once the score reaches 100, you should agree to buy the product and end the conversation. You should put [Success] at the end of your message instead of score [x].
     - If at any point of time score goes below 0, you say that you are leaving, and you put [Leave] at the end of your message instead of score [x].
@@ -146,6 +147,9 @@ def chat():
     sidechannel_response = responses[1].choices[0].message["content"]
     # check if a sidechannel attack is detected
     is_sidechannel_attack = re.search(r'Sidechannel attack detected', sidechannel_response) is not None
+
+    # lets ignore sidechannel attacks for now
+    is_sidechannel_attack = False
 
     # if detected, return with response "Sidechannel attack detected, aborting gameplay and ending conversation"
     if is_sidechannel_attack:
